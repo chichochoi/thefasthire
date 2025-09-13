@@ -1,0 +1,70 @@
+
+services:
+  # Cloud SQL Auth Proxy 서비스 추가
+  cloudsql-proxy:
+    image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
+    command: >
+      --address 0.0.0.0 
+      --port 5432 
+      dogwood-keep-467605-e8:asia-northeast3:thefasthire-db
+    volumes:
+      # 서비스 계정 키 파일 마운트
+      - ./eea8a8e02b2e321d7ea23c0362153d6eb5a39586.json:/config/key.json:ro
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/config/key.json
+    ports:
+      - "5432:5432"  # 로컬에서 접근 가능하도록
+    networks:
+      - thefasthire-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Google Cloud SQL 연결 설정으로 변경
+      - DATABASE_URL=postgresql://dbuser:heesoo3758!@cloudsql-proxy:5432/thefasthire_production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+      - FRONTEND_ORIGIN=http://localhost:3000
+      - MEDIA_DIR=/app/media
+      # Google Cloud 설정
+      - GOOGLE_CLOUD_PROJECT=dogwood-keep-467605-e8
+      - CLOUD_SQL_INSTANCE=dogwood-keep-467605-e8:asia-northeast3:thefasthire-db
+      - GOOGLE_APPLICATION_CREDENTIALS=/config/key.json
+    volumes:
+      - ./media:/app/media
+      - ./eea8a8e02b2e321d7ea23c0362153d6eb5a39586.json:/config/key.json:ro
+    depends_on:
+      - cloudsql-proxy  # db 대신 cloudsql-proxy에 의존
+    networks:
+      - thefasthire-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - thefasthire-network
+
+  # 로컬 PostgreSQL 컨테이너 제거 (더 이상 필요 없음)
+  # db:
+  #   image: postgres:15
+  #   ...
+
+volumes:
+  # postgres_data 볼륨도 제거 (클라우드에서 관리)
+
+networks:
+  thefasthire-network:
+    driver: bridge

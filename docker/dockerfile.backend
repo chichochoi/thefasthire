@@ -1,0 +1,27 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 시스템 종속성 설치
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 종속성 설치
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 백엔드 코드 복사
+COPY backend/ .
+
+# 미디어 디렉토리 생성
+RUN mkdir -p /app/media/audio
+
+# 포트 설정
+EXPOSE 8000
+
+# 서비스 계정 키 복사
+COPY service-account-key.json ./
+
+# 앱 실행
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

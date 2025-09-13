@@ -1,0 +1,19 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# 종속성 설치를 위한 파일들 복사
+COPY frontend/package*.json ./
+RUN npm ci --only=production
+
+# 소스 코드 복사
+COPY frontend/ .
+
+# Next.js 빌드
+RUN npm run build
+
+# 포트 설정
+EXPOSE 3000
+
+# 앱 실행
+CMD ["npm", "start"]
