@@ -40,7 +40,7 @@ steps:
       - '-f'
       - 'docker/dockerfile.frontend'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/thefasthire-frontend:$COMMIT_SHA'
+      - 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/thefasthire-repo/frontend:$COMMIT_SHA'
       # ✅ '--build-arg'를 사용하여 빌드 시점에 변수를 전달합니다.
       - '--build-arg'
       - 'NEXT_PUBLIC_API_URL=https://api.thefasthire.shop'
@@ -54,7 +54,7 @@ steps:
       - 'deploy'
       - 'thefasthire-backend'
       - '--image'
-      - 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/thefasthire-repo/frontend:$COMMIT_SHA'
+      - 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/thefasthire-repo/backend:$COMMIT_SHA'  # frontend가 아닌 backend
       - '--platform'
       - 'managed'
       - '--region'
@@ -78,7 +78,7 @@ steps:
       - 'deploy'
       - 'thefasthire-frontend'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/thefasthire-frontend:$COMMIT_SHA'
+      - 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/thefasthire-repo/frontend:$COMMIT_SHA'
       - '--platform'
       - 'managed'
       - '--region'
