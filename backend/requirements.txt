@@ -29,7 +29,7 @@ typing_extensions==4.15.0
 uvicorn==0.35.0
 passlib==1.7.4
 # Google Cloud 관련 추가
-google-cloud-sql-connector[pg8000]
+google-cloud-sql-connector
 pg8000
 google-auth
 google-cloud-core
