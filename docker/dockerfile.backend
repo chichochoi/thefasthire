@@ -19,7 +19,6 @@ RUN pip install --upgrade pip
 # 이 단계에서는 휠(wheel)을 생성하여 컴파일된 파일을 저장합니다.
 COPY backend/requirements.txt .
 RUN pip wheel --no-cache-dir --wheel-dir=/app/wheels -r requirements.txt
-RUN pip install # 올바른 예시 "cloud-sql-python-connector[pg8000]"
 
 
 # =================================================================
