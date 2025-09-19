@@ -1,15 +1,40 @@
+# =================================================================
+# 1단계: 빌더(Builder) 스테이지
+# -> 패키지 설치에 필요한 모든 도구가 포함된 이미지 사용
+# =================================================================
+FROM python:3.11 as builder
+
+WORKDIR /app
+
+# 빌드에 필요한 시스템 종속성 설치
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# pip 최신 버전으로 업그레이드
+RUN pip install --upgrade pip
+
+# requirements.txt 복사 및 패키지 설치
+# 이 단계에서는 휠(wheel)을 생성하여 컴파일된 파일을 저장합니다.
+COPY backend/requirements.txt .
+RUN pip wheel --no-cache-dir --wheel-dir=/app/wheels -r requirements.txt
+
+
+# =================================================================
+# 2단계: 최종(Final) 스테이지
+# -> 실제 앱 실행에 필요한 최소한의 파일만 포함하는 가벼운 이미지 사용
+# =================================================================
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# 시스템 종속성 설치
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# 빌더 스테이지에서 미리 컴파일해 둔 패키지 파일들을 복사
+COPY --from=builder /app/wheels /wheels
+COPY --from=builder /app/requirements.txt .
 
-# Python 종속성 설치
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# 복사한 휠 파일을 사용하여 패키지 설치 (컴파일 과정 불필요, 매우 빠름)
+RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt
 
 # 백엔드 코드 복사
 COPY backend/ .
@@ -19,9 +44,6 @@ RUN mkdir -p /app/media/audio
 
 # 포트 설정
 EXPOSE 8000
-
-# 서비스 계정 키 복사
-COPY service-account-key.json ./
 
 # 앱 실행
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
