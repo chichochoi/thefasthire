@@ -1,19 +1,30 @@
-FROM node:18-alpine
+FROM node:18-alpine AS builder  
+# <-- 스테이지에 이름 부여 (builder)
 
 WORKDIR /app
 
-# 종속성 설치를 위한 파일들 복사
+# ✅ 빌드 시점에 외부에서 NEXT_PUBLIC_API_URL 값을 받기 위한 ARG 선언
+ARG NEXT_PUBLIC_API_URL
+# ✅ 받은 ARG 값을 빌드 과정에서 사용할 환경 변수(ENV)로 설정
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 COPY frontend/package*.json ./
-RUN npm ci --only=production
+# ❗ devDependencies도 설치해야 빌드가 가능합니다. --only=production 제거
+RUN npm ci
 
-# 소스 코드 복사
 COPY frontend/ .
-
-# Next.js 빌드
 RUN npm run build
 
-# 포트 설정
-EXPOSE 3000
 
-# 앱 실행
+# --- 프로덕션 이미지 ---
+FROM node:18-alpine AS production
+
+WORKDIR /app
+
+# ❗ 불필요한 파일(package.json, node_modules) 복사를 제거하고, 빌드 결과물만 복사합니다.
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+
+EXPOSE 3000
 CMD ["npm", "start"]
